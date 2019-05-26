@@ -184,6 +184,11 @@ class BaiduTranslator implements TranslatorInterface
 
 }
 
-$t=new BaiduTranslator('','asasdd');
-$res=$t->translateMany(['去睡觉吧','好像是你的']);
-var_dump($res);
+// 实例化百度通用翻译对象
+$t=new BaiduTranslator('auto','en');
+// 单句翻译
+$word=$t->translateOne('好好学习');
+var_dump($word);
+// 多句翻译
+$words=$t->translateMany(['不忘初心','与时俱进']);
+var_dump($words);
