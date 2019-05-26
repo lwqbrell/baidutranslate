@@ -1,7 +1,13 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User:  蓝伟清
+ * Email：lwqbrell@qq.com
+ * Date:  2019/5/26
+ */
 define("CURL_TIMEOUT",   10);
 define("URL",            "http://api.fanyi.baidu.com/api/trans/vip/translate");
-define("APP_ID",         "20190525000301598"); //替换为您的APPID
+define("APP_ID",         "20190525000301598");   //替换为您的APPID
 define("SEC_KEY",        "dRFWHSDJ36C_A05eopnf");//替换为您的密钥
 
 interface TranslatorInterface
@@ -11,7 +17,9 @@ interface TranslatorInterface
     public function translateMany($words);
 }
 
-
+/**
+ * Class BaiduTranslator [西洋汇笔试] 百度通用翻译SDK
+ */
 class BaiduTranslator implements TranslatorInterface
 {
     private  $_from;
@@ -27,7 +35,7 @@ class BaiduTranslator implements TranslatorInterface
                 if ($this->isTranslateSupport($from)){
                     $this->_from=$from;
                 }else{
-                    throw new Exception('语种格式不支持','10001');
+                    throw new Exception('语种格式不支持,请参考：http://fanyi-api.baidu.com/api/trans/product/apidoc#joinFile','10001');
                 }
             }
             if (empty($to)){
@@ -36,24 +44,32 @@ class BaiduTranslator implements TranslatorInterface
                 if ($this->isTranslateSupport($to)){
                     $this->_to=$to;
                 }else{
-                    throw new Exception('翻译格式不支持','10002');
+                    throw new Exception('翻译格式不支持,请参考：http://fanyi-api.baidu.com/api/trans/product/apidoc#joinFile','10002');
                 }
             }
         }catch (Exception $e){
-           var_dump($e->getMessage(),$e->getCode());
-           die;
+            var_dump($e->getMessage(),$e->getCode());
+            die;
         }
     }
 
+    /**
+     * @param  string $word 单句翻译原文
+     * @return string mixed 单句翻译译文
+     */
     public function translateOne($word){
         $this->getArgs($word);
         return $this->getWords();
     }
 
+    /**
+     * @param  array $words 多句翻译原文
+     * @return array $data  多句翻译译文
+     */
     public function translateMany($words){
         $data=[];
         if (!is_array($words)){
-            throw new \Exception('请以数组的形式发起请求','10001');
+            throw new Exception('请以数组的形式发起请求','10002');
         }
         foreach ($words as $value){
             $this->getArgs($value);
@@ -62,6 +78,9 @@ class BaiduTranslator implements TranslatorInterface
         return $data;
     }
 
+    /**
+     * @param string $word 原文
+     */
     public function getArgs($word){
         $this->words=$word;
         $this->args = array(
@@ -72,6 +91,10 @@ class BaiduTranslator implements TranslatorInterface
             'to' => $this->_to,
         );
     }
+
+    /**
+     * @return string mixed 译文
+     */
     public function getWords(){
         $this->args['sign'] = $this->buildSign($this->words, APP_ID, $this->args['salt'], SEC_KEY);
         $ret = $this->call(URL, $this->args);
@@ -79,6 +102,10 @@ class BaiduTranslator implements TranslatorInterface
         return $ret['trans_result'][0]['dst'];
     }
 
+    /**
+     * @param  string $lang 语种
+     * @return bool
+     */
     public function isTranslateSupport($lang){
         $languages=['auto','zh','en','yue','wyw','jp','kor','fra','spa','th','ara','ru',
             'pt','de','it','el','nl','pl','bul','est','dan','fin','cs','rom','slo',
@@ -91,6 +118,13 @@ class BaiduTranslator implements TranslatorInterface
     }
 
     //加密
+    /**
+     * @param string $query
+     * @param string $appID
+     * @param string $salt
+     * @param string $secKey
+     * @return string
+     */
     function buildSign($query, $appID, $salt, $secKey)
     {
         $str = $appID . $query . $salt . $secKey;
@@ -99,6 +133,15 @@ class BaiduTranslator implements TranslatorInterface
     }
 
     //发起网络请求
+    /**
+     * @param  string $url
+     * @param  null $args
+     * @param  string $method
+     * @param  int $testflag
+     * @param  int $timeout
+     * @param  array $headers
+     * @return bool|mixed
+     */
     function call($url, $args=null, $method="post", $testflag = 0, $timeout = CURL_TIMEOUT, $headers=array())
     {
         $ret = false;
@@ -118,6 +161,15 @@ class BaiduTranslator implements TranslatorInterface
 
     }
 
+    /**
+     * @param  string $url
+     * @param  null $args
+     * @param  string $method
+     * @param  bool $withCookie
+     * @param  int $timeout
+     * @param  array $headers
+     * @return mixed
+     */
     function callOnce($url, $args=null, $method="post", $withCookie = false, $timeout = CURL_TIMEOUT, $headers=array())
     {
         $ch = curl_init();
@@ -158,6 +210,10 @@ class BaiduTranslator implements TranslatorInterface
         return $r;
     }
 
+    /**
+     * @param  array $args
+     * @return string
+     */
     function convert(&$args)
     {
         $data = '';
@@ -184,11 +240,20 @@ class BaiduTranslator implements TranslatorInterface
 
 }
 
-// 实例化百度通用翻译对象
+// 实例化百度通用翻译对象,第一个参数为原文语种(可设为自动获取auto)，第二个参数为译文语种
 $t=new BaiduTranslator('auto','en');
 // 单句翻译
 $word=$t->translateOne('好好学习');
 var_dump($word);
 // 多句翻译
-$words=$t->translateMany(['不忘初心','与时俱进']);
+$words=$t->translateMany(array('不忘初心','与时俱进'));
 var_dump($words);
+
+/**
+ * 百度通用翻译SDK使用说明
+ * 1.将define("APP_ID","20190525000301598");    //替换为您的APPID
+ * 2.将define("SEC_KEY","dRFWHSDJ36C_A05eopnf");//替换为您的密钥
+ * 3.实例化对象时需要传原文语种和译文语种参数
+ * 4.调用translateOne($word)翻译单句
+ * 5.调用translateMany($word)翻译多句
+ */
