@@ -1,8 +1,8 @@
 <?php
 define("CURL_TIMEOUT",   10);
 define("URL",            "http://api.fanyi.baidu.com/api/trans/vip/translate");
-define("APP_ID",         "20190525000113089"); //替换为您的APPID
-define("SEC_KEY",        "dRFWHSDJ36C_gijnbguw");//替换为您的密钥
+define("APP_ID",         "20190525000301598"); //替换为您的APPID
+define("SEC_KEY",        "dRFWHSDJ36C_A05eopnf");//替换为您的密钥
 
 interface TranslatorInterface
 {
@@ -20,8 +20,29 @@ class BaiduTranslator implements TranslatorInterface
     public $words;
     public function __construct($from,$to)
     {
-        $this->_from=$from;
-        $this->_to=$to;
+        try{
+            if (empty($from)){
+                $this->_from='auto';
+            }else{
+                if ($this->isTranslateSupport($from)){
+                    $this->_from=$from;
+                }else{
+                    throw new Exception('语种格式不支持','10001');
+                }
+            }
+            if (empty($to)){
+                $this->_to='en';
+            }else{
+                if ($this->isTranslateSupport($to)){
+                    $this->_to=$to;
+                }else{
+                    throw new Exception('翻译格式不支持','10002');
+                }
+            }
+        }catch (Exception $e){
+           var_dump($e->getMessage(),$e->getCode());
+           die;
+        }
     }
 
     public function translateOne($word){
@@ -56,6 +77,17 @@ class BaiduTranslator implements TranslatorInterface
         $ret = $this->call(URL, $this->args);
         $ret = json_decode($ret, true);
         return $ret['trans_result'][0]['dst'];
+    }
+
+    public function isTranslateSupport($lang){
+        $languages=['auto','zh','en','yue','wyw','jp','kor','fra','spa','th','ara','ru',
+            'pt','de','it','el','nl','pl','bul','est','dan','fin','cs','rom','slo',
+            'swe','hu','cht','vie'];
+        if (in_array($lang,$languages)){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     //加密
@@ -152,6 +184,6 @@ class BaiduTranslator implements TranslatorInterface
 
 }
 
-$t=new BaiduTranslator('auto','en');
+$t=new BaiduTranslator('','asasdd');
 $res=$t->translateMany(['去睡觉吧','好像是你的']);
 var_dump($res);
